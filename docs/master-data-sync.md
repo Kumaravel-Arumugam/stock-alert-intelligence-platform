@@ -6,6 +6,8 @@ The Master Data Sync workflow is responsible for ingesting, normalizing, and mai
 
 This workflow operates independently of real-time execution paths and serves as a foundational data source for downstream components.
 
+<img width="1920" height="1080" alt="Screenshot (429)" src="https://github.com/user-attachments/assets/0e1b593c-ba8b-4496-97e5-30678610505b" />
+
 ---
 
 ## Purpose & Scope
