@@ -74,9 +74,9 @@ The platform is implemented using a layered architecture to ensure clarity, main
   Converts structured outputs into concise, human-readable summaries without influencing logic  
   (see: [AI Summary](docs/ai-summary.md))
 
-- **Data & State Layer**  
-  Persists user context, reference data, and workflow state to enable recovery and auditability  
-  (see: [State Machine & Context Handling](docs/state-machine.md))
+- **Data, State & Business Rules Layer**  
+  Persists user context, reference data, workflow state, and alert definitions  
+  (see: [Alert Management](docs/alert-management.md), [State Machine & Context Handling](docs/state-machine.md))
 
 This layered separation allows individual components to evolve independently while preserving overall system integrity.
 
@@ -87,15 +87,25 @@ This layered separation allows individual components to evolve independently whi
 At a high level, the system follows a structured, event-driven flow that mirrors the decision-support lifecycle:
 
 User Interaction
+
 ↓
+
 Central Orchestration
+
 ↓
+
 State & Context Evaluation
+
 ↓
+
 Technical Analysis
+
 ↓
+
 Monitoring & Condition Evaluation
+
 ↓
+
 Notification & Optional Summary
 
 
@@ -165,7 +175,7 @@ These exclusions reflect a deliberate focus on problem translation and maintaina
   
   → JSON: [Alert_Watcher.json](workflows/Alert_Watcher.json)
 
-- [AI Summary](docs/ai-summary.md) 
+- [AI Summary](docs/ai-summary.md)
   
   → JSON: [AI_Summary.json](workflows/AI_Summary.json)
 
@@ -176,4 +186,5 @@ These exclusions reflect a deliberate focus on problem translation and maintaina
 ### Supporting Systems
 - [Master Data Sync](docs/master-data-sync.md)
 - [Trade Command Router](docs/trade-command-router.md)
+- [Alert Management](docs/alert-management.md)
 - [State Machine & Context Handling](docs/state-machine.md)
