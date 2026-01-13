@@ -2,6 +2,8 @@
 
 Logic-driven stock alert and technical analysis automation platform designed with modular workflows, state management, and AI-assisted summarization.
 
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/7edec043-1e3b-462e-bf22-c0e3b14858a8" />
+
 ---
 
 ## Business Context
