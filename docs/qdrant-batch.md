@@ -6,6 +6,8 @@ The Qdrant Batch Sync workflow is responsible for building and maintaining a sem
 
 This workflow enables flexible, typo-tolerant, and alias-aware stock resolution without impacting runtime system performance.
 
+<img width="1920" height="1080" alt="Screenshot (430)" src="https://github.com/user-attachments/assets/0e6baafc-1d24-4427-a156-d42cd4cbf69a" />
+
 ---
 
 ## Data Sources & Preparation
