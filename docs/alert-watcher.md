@@ -6,6 +6,8 @@ The Alert Watcher is responsible for continuous monitoring of market conditions 
 
 This workflow is invoked only after alert conditions have been defined and validated by the central controller.
 
+<img width="1920" height="1080" alt="Screenshot (425)" src="https://github.com/user-attachments/assets/2bfe9c89-2a91-4fc2-a10f-72631ca76877" />
+
 ---
 
 ## Monitoring Strategy
