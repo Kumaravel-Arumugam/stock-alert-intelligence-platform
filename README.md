@@ -56,6 +56,17 @@ The current scope intentionally limits analysis to a small set of indicators and
 
 ---
 
+## Tech Stack
+
+- Orchestration: n8n (no-code workflow automation)
+- Backend Logic: Python, JavaScript
+- Database & State Management: PostgreSQL
+- Vector Search: Qdrant
+- LLM Runtime: Ollama (local inference)
+- Market Data API: Angel One Smart API
+- Messaging Interface: Telegram Bot API
+- Deployment Environment: Docker-based services
+
 ## Layered Implementation
 
 The platform is implemented using a layered architecture to ensure clarity, maintainability, and controlled complexity. Each layer addresses a specific responsibility within the overall system.
@@ -191,4 +202,18 @@ These exclusions reflect a deliberate focus on problem translation and maintaina
 - [Alert Management](docs/alert-management.md)
 - [State Machine & Context Handling](docs/state-machine.md)
 - [Workflow Tooling & Platform Rationale](workflows/tooling-and-platform.md)
+
+
+## System Requirements (Conceptual)
+
+This project assumes the presence of the following infrastructure components:
+
+- n8n orchestration runtime
+- PostgreSQL for state and session persistence
+- Qdrant for vector-based symbol lookup
+- Ollama for local LLM-based summarization
+- Angel One Smart API credentials for market data access
+
+Detailed deployment and environment setup steps are intentionally excluded to keep the repository focused on system design, logic, and architectural decisions.
+
 
