@@ -99,34 +99,52 @@ This layered separation allows individual components to evolve independently whi
 
 At a high level, the system follows a structured, event-driven flow that mirrors the decision-support lifecycle:
 
-User Interaction
 
-↓
-
-Central Orchestration
-
-↓
-
-State & Context Evaluation
-
-↓
-
-Technical Analysis
-
-↓
-
-Monitoring & Condition Evaluation
-
-↓
-
-Notification & Optional Summary
-
+        User Interaction
+                ↓
+      Central Orchestration
+                ↓
+      State & Context Evaluation
+                ↓
+        Technical Analysis
+                ↓
+    Monitoring & Condition Evaluation
+                ↓
+    Notification & Optional Summary
 
 - User interactions initiate requests interpreted by a central orchestration layer.
 - Workflow state and context determine the appropriate execution path.
 - Technical analysis is performed independently of monitoring and notification logic.
 - Monitoring triggers actions only when predefined conditions are satisfied.
 - Summaries are optional and non-authoritative.
+
+## Why This Architecture?
+
+This architecture was intentionally designed to balance reliability, clarity, and extensibility.
+
+Key reasons for this design include:
+- Preventing feedback loops between analysis, monitoring, and execution layers
+- Preserving explainability through deterministic, rule-based logic
+- Handling partial or evolving user inputs via persisted state rather than in-memory assumptions
+- Allowing individual system components to evolve independently without cascading impact
+
+The result is a system that prioritizes decision support and operational safety over feature density.
+
+## Project Status
+
+This project represents a functional MVP focused on system design, decision logic, and automation architecture.
+
+The current implementation prioritizes reliability, explainability, and modularity. Future iterations may expand indicator coverage, chart types, and optional execution capabilities based on user requirements.
+
+## How to Review This Project
+
+For a quick and structured review of the system:
+
+1. Start with the System Overview diagram in the README
+2. Review the Stock Alert & Analysis Controller to understand orchestration
+3. Inspect the Technical Analysis Engine v2 for deterministic logic
+4. Review the Alert Watcher for monitoring and execution behavior
+5. Optionally review the AI Summary layer for post-analysis augmentation
 
 Additional architectural detail is available in:
 - [System Overview](architecture/system-overview.md)
