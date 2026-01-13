@@ -6,6 +6,8 @@ The Alert Management component is responsible for managing the full lifecycle of
 
 This logic operates independently of real-time monitoring and execution. Its purpose is to ensure that alert definitions remain consistent, valid, and free from duplication before being consumed by downstream workflows.
 
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/a7cc51b4-eb57-4b3c-b662-86a892aca5d9" />
+
 ---
 
 ## Responsibilities
