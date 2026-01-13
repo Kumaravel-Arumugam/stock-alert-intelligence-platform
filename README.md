@@ -188,3 +188,5 @@ These exclusions reflect a deliberate focus on problem translation and maintaina
 - [Trade Command Router](docs/trade-command-router.md)
 - [Alert Management](docs/alert-management.md)
 - [State Machine & Context Handling](docs/state-machine.md)
+- [Workflow Tooling & Platform Rationale](workflows/tooling-and-platform.md)
+
