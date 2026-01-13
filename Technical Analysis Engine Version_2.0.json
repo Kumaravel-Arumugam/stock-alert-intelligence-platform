@@ -1,0 +1,917 @@
+{
+  "name": "Technical Analysis Engine Version:2.0",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "token",
+              "type": "number"
+            },
+            {
+              "name": "telegram id",
+              "type": "number"
+            },
+            {
+              "name": "request_types"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -2112,
+        960
+      ],
+      "id": "f2f2f19a-df1a-42a2-b9f5-9ef7bb727c42",
+      "name": "TA Engine Trigger"
+    },
+    {
+      "parameters": {
+        "options": {
+          "algorithm": "SHA1",
+          "digits": "=6",
+          "period": 30
+        }
+      },
+      "type": "n8n-nodes-base.totp",
+      "typeVersion": 1,
+      "position": [
+        -1888,
+        960
+      ],
+      "id": "33446885-d721-4d01-8b2e-e31d998ebf59",
+      "name": "Generate AngelOne TOTP",
+      "credentials": {
+        "totpApi": {
+          "id": "ady2aWigEqKMurX0",
+          "name": "TOTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8c981feb-5ed6-4139-b42f-cba17a297ef5",
+              "name": "jwtToken",
+              "value": "={{ $json.data.jwtToken }}",
+              "type": "string"
+            },
+            {
+              "id": "297bbae1-f496-498d-92eb-ae1b06827763",
+              "name": "token",
+              "value": "={{ $('TA Engine Trigger').item.json.token }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1440,
+        960
+      ],
+      "id": "550486d7-d009-4501-8946-945b82bd2894",
+      "name": "Prepare Token & JWT"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT symbol, name \nFROM instrument_master \nWHERE token = '{{ $json.token }}';\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1216,
+        752
+      ],
+      "id": "fc12ec88-c7e8-47b4-b0a9-9f733ef6a7f9",
+      "name": "Get Stock Metadata",
+      "credentials": {
+        "postgres": {
+          "id": "QDssr4BqAkPgUdJl",
+          "name": "stock_trading_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://apiconnect.angelbroking.com/rest/secure/angelbroking/historical/v1/getCandleData",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Prepare Token & JWT').item.json.jwtToken }}"
+            },
+            {
+              "name": "X-PrivateKey",
+              "value": "={{$env.ANGELONE_PRIVATE_KEY}}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "X-SourceID",
+              "value": "WEB"
+            },
+            {
+              "name": "X-ClientLocalIP",
+              "value": "127.0.0.1"
+            },
+            {
+              "name": "X-ClientPublicIP",
+              "value": "127.0.0.1"
+            },
+            {
+              "name": "X-MACAddress",
+              "value": "MAC_ADDRESS"
+            },
+            {
+              "name": "X-UserType",
+              "value": "USER"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"exchange\": \"NSE\",\n  \"symboltoken\": \"{{ $('Prepare Token & JWT').item.json.token }}\",\n  \"interval\": \"ONE_DAY\",\n  \"fromdate\": \"{{ $now.minus({days: 400}).toFormat('yyyy-MM-dd HH:mm') }}\",\n  \"todate\": \"{{ $now.toFormat('yyyy-MM-dd HH:mm') }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1216,
+        1072
+      ],
+      "id": "b28d823c-5e24-456a-b8cf-c1850ccc1548",
+      "name": "Fetch 400D OHLCV"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -992,
+        960
+      ],
+      "id": "e8b4007c-ee26-4848-9955-86951582e807",
+      "name": "Combine Meta + OHLCV",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "chart1_base64",
+        "binaryPropertyName": "1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        736
+      ],
+      "id": "3b31dc83-e576-45d7-9efe-cfe9eff45e22",
+      "name": "“Chart 1: Price Action to File"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "chart3_base64",
+        "binaryPropertyName": "3",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        1120
+      ],
+      "id": "60ab3ec3-71a5-49b9-91ce-9e8da6df95b4",
+      "name": "Chart 3: MACD to File"
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('TA Engine Trigger').item.json['telegram id'] }}",
+        "binaryData": true,
+        "binaryPropertyName": "1",
+        "additionalFields": {
+          "caption": "={{ $('Python B: The Artist').item.json.chart1_caption }}",
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1264,
+        944
+      ],
+      "id": "c3c1dd10-a95d-4246-ace2-ddbc21db080b",
+      "name": "Telegram: Chart 1",
+      "webhookId": "618f022c-42f4-490f-ae1d-6f0379b569de",
+      "credentials": {
+        "telegramApi": {
+          "id": "gk6r3Lzq8qYvCbWR",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('TA Engine Trigger').item.json['telegram id'] }}",
+        "binaryData": true,
+        "binaryPropertyName": "2",
+        "additionalFields": {
+          "caption": "={{ $('Python B: The Artist').item.json.chart2_caption }}",
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1264,
+        1136
+      ],
+      "id": "2dd32fbf-665d-422e-a8db-a877ea22be93",
+      "name": "Telegram: Chart 2",
+      "webhookId": "618f022c-42f4-490f-ae1d-6f0379b569de",
+      "credentials": {
+        "telegramApi": {
+          "id": "gk6r3Lzq8qYvCbWR",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('TA Engine Trigger').item.json['telegram id'] }}",
+        "binaryData": true,
+        "binaryPropertyName": "3",
+        "additionalFields": {
+          "caption": "={{ $('Python B: The Artist').item.json.chart3_caption }}",
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1264,
+        1328
+      ],
+      "id": "268f8548-45f5-4902-9d01-3698630c7e16",
+      "name": "Telegram: Chart 3",
+      "webhookId": "618f022c-42f4-490f-ae1d-6f0379b569de",
+      "credentials": {
+        "telegramApi": {
+          "id": "gk6r3Lzq8qYvCbWR",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 🎨 4. CHART GENERATION\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n**What Happens:**\nCreates 3 professional trading charts:\n\n**Chart 1 - Price Action Master:**\n• Price line with subtle glow effect\n• MA50 & MA200 trend lines\n• Support/Resistance levels\n• Volume bars (green=bullish, red=bearish)\n\n**Chart 2 - Bollinger Bands:**\n• Price with volatility bands\n• Squeeze detection visualization\n• Band width analysis\n\n**Chart 3 - MACD Momentum:**\n• MACD + Signal lines with glow\n• Histogram (bullish/bearish)\n• Zero-line crossover reference\n\n**Quality:** DPI 150, dark theme, color-coded signals, mobile-optimized\n\n**Output:** 3 base64-encoded PNG images ready for messaging",
+        "height": 1048,
+        "width": 480,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        624,
+        672
+      ],
+      "id": "dfcfe0b6-a2d4-4f4a-a914-7a9c347ee0ee",
+      "name": "Chart Generation Note"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "chart2_base64",
+        "binaryPropertyName": "2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        928
+      ],
+      "id": "845fece5-3ff1-44a7-b610-cd8258d6bc27",
+      "name": "Chart 2: Bollinger to File"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://apiconnect.angelbroking.com/rest/auth/angelbroking/user/v1/loginByPassword",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "X-UserType",
+              "value": "USER"
+            },
+            {
+              "name": "X-SourceID",
+              "value": "WEB"
+            },
+            {
+              "name": "X-ClientLocalIP",
+              "value": "157.51.46.214"
+            },
+            {
+              "name": "X-ClientPublicIP",
+              "value": "157.51.46.214"
+            },
+            {
+              "name": "X-MACAddress",
+              "value": "48:45:E6:80:43:73"
+            },
+            {
+              "name": "X-PrivateKey",
+              "value": "={{$env.ANGELONE_PRIVATE_KEY}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "clientcode",
+              "value": "={{$env.ANGELONE_CLIENT_CODE}}"
+            },
+            {
+              "name": "password",
+              "value": "={{$env.ANGELONE_PASSWORD}}"
+            },
+            {
+              "name": "totp",
+              "value": "={{ $json.token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1664,
+        960
+      ],
+      "id": "90c06b9a-bddb-4509-8b12-e71860e3c1fc",
+      "name": "AngelOne_Login"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0d603704-4537-43c2-8435-132332675979",
+              "leftValue": "={{ $('Python A: The Analyst').item.json.has_charts }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        96,
+        1136
+      ],
+      "id": "27e29c6c-f4f6-4656-a111-8ed610026dd3",
+      "name": "Check: Need Charts?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "request_types_assign",
+              "name": "request_types",
+              "value": "={{ $('TA Engine Trigger').first().json.request_types }}",
+              "type": "array"
+            },
+            {
+              "id": "d0a25744-4672-4ebe-8200-1c705a4e6a1f",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -768,
+        768
+      ],
+      "id": "572e7871-88e7-445f-aa4c-d890a49baca9",
+      "name": "Restore Context"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -576,
+        944
+      ],
+      "id": "7320684b-a32b-4e91-9191-e7baf33d18e7",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "import pandas as pd\nimport numpy as np\nfrom datetime import datetime\nimport json\n\n# ============================================\n# SECTION 1: DATA PREPARATION\n# ============================================\n\n# Grab the single merged item\nitem = _items[0]\npayload = item.get('json', item) if isinstance(item, dict) else item\n\n# Inputs\ntoken = payload.get('token', '')\nsymbol = payload.get('symbol', 'UNKNOWN')\nname = payload.get('name', 'Unknown Stock')\ncandle_data = payload.get('data', [])\ntelegram_id = payload.get('telegram id', '')\n\n# 1. STRICT INPUT HANDLING (No Defaults)\nraw_requests = payload.get('request_types', [])\n\n# Handle cases where input might be None\nif raw_requests is None:\n    raw_requests = []\n\n# Handle String Input safely (e.g. \"['MOMENTUM']\") without 'ast'\nif isinstance(raw_requests, str):\n    clean_str = raw_requests.replace('[', '').replace(']', '').replace('\"', '').replace(\"'\", \"\")\n    # Split by comma and strip whitespace\n    raw_requests = [x.strip() for x in clean_str.split(',') if x.strip()]\n\n# Normalize to UPPERCASE to ensure \"Momentum\" matches \"MOMENTUM\"\nrequest_types = [str(x).upper() for x in raw_requests]\n\nif not candle_data:\n    return [{'error': 'No candle data received'}]\n\n# Convert to DataFrame\ndf = pd.DataFrame(candle_data, columns=[\"timestamp\", \"open\", \"high\", \"low\", \"close\", \"volume\"])\ndf['timestamp'] = pd.to_datetime(df['timestamp'])\nfor col in ['open', 'high', 'low', 'close', 'volume']:\n    df[col] = pd.to_numeric(df[col], errors='coerce')\ndf.set_index('timestamp', inplace=True)\ndf.sort_index(inplace=True)\ncurrent_price = float(df['close'].iloc[-1])\n\n# Initialize Defaults (Safety for skipped calculations)\ncurrent_rsi, rsi_signal, current_k, current_d, stoch_signal = 0, \"\", 0, 0, \"\"\ncurrent_atr, atr_percent, atr_signal = 0, 0, \"\"\ncurrent_ma50, current_ma200, ma_signal, resistance, support = 0, 0, \"\", 0, 0\ncurrent_volume, avg_volume, volume_ratio, volume_signal = 0, 0, 0, \"\"\ncurrent_bb_upper, current_bb_middle, current_bb_lower, bb_signal, bb_width = 0, 0, 0, \"\", 0\ncurrent_macd, current_macd_signal, current_macd_hist, macd_signal_text = 0, 0, 0, \"\"\n\n# ============================================\n# SECTION 2: CONDITIONAL CALCULATIONS\n# ============================================\n\n# 1. Momentum\nif 'MOMENTUM' in request_types:\n    # RSI\n    delta = df['close'].diff()\n    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()\n    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()\n    rs = gain / loss\n    df['rsi'] = 100 - (100 / (1 + rs))\n    current_rsi = float(df['rsi'].iloc[-1])\n    \n    rsi_180d = df['rsi'].iloc[-180:].dropna()\n    if len(rsi_180d) > 0:\n        rsi_mean = float(rsi_180d.mean())\n        rsi_std = float(rsi_180d.std())\n        rsi_oversold, rsi_overbought = max(20, rsi_mean - rsi_std), min(80, rsi_mean + rsi_std)\n    else:\n        rsi_oversold, rsi_overbought = 30, 70\n    rsi_signal = \"Oversold 🟢\" if current_rsi < rsi_oversold else \"Overbought 🔴\" if current_rsi > rsi_overbought else \"Neutral ⚪\"\n\n    # Stochastic\n    low_min = df['low'].rolling(window=14).min()\n    high_max = df['high'].rolling(window=14).max()\n    df['stoch_k'] = 100 * ((df['close'] - low_min) / (high_max - low_min))\n    df['stoch_d'] = df['stoch_k'].rolling(window=3).mean()\n    current_k, current_d = float(df['stoch_k'].iloc[-1]), float(df['stoch_d'].iloc[-1])\n    stoch_signal = \"Oversold 🟢\" if current_k < 20 else \"Overbought 🔴\" if current_k > 80 else \"Neutral ⚪\"\n\n    # ATR\n    high_low = df['high'] - df['low']\n    high_close = (df['high'] - df['close'].shift()).abs()\n    low_close = (df['low'] - df['close'].shift()).abs()\n    tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)\n    df['atr'] = tr.rolling(window=14).mean()\n    current_atr = float(df['atr'].iloc[-1])\n    atr_percent = (current_atr / current_price) * 100\n    atr_signal = \"Low\" if atr_percent < 1.5 else \"High\" if atr_percent > 3.0 else \"Medium\"\n\n# 2. Trend (Runs if TREND or CHARTS is selected)\nif 'TREND' in request_types or 'CHARTS' in request_types:\n    df['ma50'] = df['close'].rolling(window=50).mean()\n    df['ma200'] = df['close'].rolling(window=200).mean()\n    current_ma50 = float(df['ma50'].iloc[-1]) if not pd.isna(df['ma50'].iloc[-1]) else 0\n    current_ma200 = float(df['ma200'].iloc[-1]) if not pd.isna(df['ma200'].iloc[-1]) else 0\n    \n    if current_price > current_ma50 > current_ma200: ma_signal = \"Bullish (Golden Cross) 📈\"\n    elif current_price < current_ma50 < current_ma200: ma_signal = \"Bearish (Death Cross) 📉\"\n    elif current_price > current_ma50: ma_signal = \"Short-term Bullish 🟢\"\n    else: ma_signal = \"Short-term Bearish 🔴\"\n\n    recent_50 = df.iloc[-50:]\n    resistance = float(recent_50['high'].nlargest(3).values[0])\n    support = float(recent_50['low'].nsmallest(3).values[0])\n\n# 3. Volatility (Runs if VOLATILITY or CHARTS is selected)\nif 'VOLATILITY' in request_types or 'CHARTS' in request_types:\n    # Bollinger Bands\n    df['bb_middle'] = df['close'].rolling(window=20).mean()\n    bb_std = df['close'].rolling(window=20).std()\n    df['bb_upper'] = df['bb_middle'] + (2 * bb_std)\n    df['bb_lower'] = df['bb_middle'] - (2 * bb_std)\n    current_bb_upper = float(df['bb_upper'].iloc[-1])\n    current_bb_middle = float(df['bb_middle'].iloc[-1])\n    current_bb_lower = float(df['bb_lower'].iloc[-1])\n    bb_width = ((current_bb_upper - current_bb_lower) / current_bb_middle) * 100\n    \n    if current_price > current_bb_upper: bb_signal = \"Above Upper Band (Overbought) 🔴\"\n    elif current_price < current_bb_lower: bb_signal = \"Below Lower Band (Oversold) 🟢\"\n    elif bb_width < 5: bb_signal = \"Squeeze (Breakout Coming) ⚡\"\n    else: bb_signal = \"Within Bands (Normal) ⚪\"\n\n    # MACD\n    df['ema12'] = df['close'].ewm(span=12, adjust=False).mean()\n    df['ema26'] = df['close'].ewm(span=26, adjust=False).mean()\n    df['macd'] = df['ema12'] - df['ema26']\n    df['macd_signal'] = df['macd'].ewm(span=9, adjust=False).mean()\n    df['macd_histogram'] = df['macd'] - df['macd_signal']\n    current_macd = float(df['macd'].iloc[-1])\n    current_macd_signal = float(df['macd_signal'].iloc[-1])\n    current_macd_hist = float(df['macd_histogram'].iloc[-1])\n    \n    macd_signal_text = \"Bullish Crossover 📈\" if current_macd > current_macd_signal and current_macd_hist > 0 else \"Bearish Crossover 📉\" if current_macd < current_macd_signal and current_macd_hist < 0 else \"Neutral ⚪\"\n\n    # Volume\n    df['volume_ma'] = df['volume'].rolling(window=50).mean()\n    current_volume = float(df['volume'].iloc[-1])\n    avg_volume = float(df['volume_ma'].iloc[-1])\n    volume_ratio = (current_volume / avg_volume) * 100 if avg_volume > 0 else 0\n    volume_signal = \"High (Strong interest) 📊\" if volume_ratio > 150 else \"Low (Weak interest) 📉\" if volume_ratio < 70 else \"Average ⚪\"\n\n# ============================================\n# SECTION 3: DYNAMIC TEXT BUILDER\n# ============================================\n\ntext_html = f\"\"\"📊 <b>{symbol} - Technical Analysis</b>\n\n{name}\n💰 Current Price: <b>₹{current_price:.2f}</b>\n\"\"\"\n\nif 'MOMENTUM' in request_types:\n    text_html += f\"\"\"\n━━━━━━━━━━━━━━━━━━━━━\n<b>🔹 MOMENTUM INDICATORS</b>\n\n<b>RSI (14):</b> {current_rsi:.1f}/100\n└ Signal: <i>{rsi_signal}</i>\n└ Range: {rsi_oversold:.1f} - {rsi_overbought:.1f}\n\n<b>Stochastic (14,3):</b> %K={current_k:.1f}, %D={current_d:.1f}\n└ Signal: <i>{stoch_signal}</i>\n\n<b>ATR (14):</b> ₹{current_atr:.2f} ({atr_percent:.2f}%)\n└ Volatility: <i>{atr_signal}</i>\n\"\"\"\n\nif 'TREND' in request_types:\n    text_html += f\"\"\"\n━━━━━━━━━━━━━━━━━━━━━\n<b>🔹 TREND INDICATORS</b>\n\n<b>Moving Averages:</b>\n• MA50: ₹{current_ma50:.2f}\n• MA200: ₹{current_ma200:.2f}\n└ Signal: <i>{ma_signal}</i>\n\n<b>Support/Resistance:</b>\n• Resistance: ₹{resistance:.2f}\n• Support: ₹{support:.2f}\n\"\"\"\n\nif 'VOLATILITY' in request_types:\n    text_html += f\"\"\"\n━━━━━━━━━━━━━━━━━━━━━\n<b>🔹 VOLUME & VOLATILITY</b>\n\n<b>Volume:</b> {current_volume/1e6:.2f}M ({volume_ratio:.0f}% avg)\n└ Signal: <i>{volume_signal}</i>\n\n<b>Bollinger Bands:</b>\n• Width: {bb_width:.2f}%\n└ Signal: <i>{bb_signal}</i>\n\n<b>MACD (12,26,9):</b>\n• MACD: {current_macd:.2f} | Sig: {current_macd_signal:.2f}\n└ Signal: <i>{macd_signal_text}</i>\n\"\"\"\n\n# Footer\nif 'CHARTS' in request_types:\n    text_html += \"\\n━━━━━━━━━━━━━━━━━━━━━\\n<i>📈 Charts loading below...</i>\\n\"\n\ntext_html += f\"\\n<i>⏰ Analysis Time: {datetime.now().strftime('%d-%m-%Y %H:%M:%S')}</i>\"\n\n# ============================================\n# SECTION 4: OUTPUT\n# ============================================\n\nreturn [{\n    'text_html': text_html,\n    'has_charts': 'CHARTS' in request_types,\n    'symbol': symbol,\n    'name': name,\n    'token': token,\n    'telegram_id': telegram_id,\n    'candle_data': candle_data,\n    'indicators': {\n        'support': support,\n        'resistance': resistance,\n        'ma_signal': ma_signal,\n        'bb_width': bb_width,\n        'bb_signal': bb_signal,\n        'macd': current_macd,\n        'macd_signal': current_macd_signal,\n        'macd_text': macd_signal_text,\n        'avg_volume': avg_volume\n    }\n}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        944
+      ],
+      "id": "f8e348e6-7d1e-4d4c-8c2e-199b178c0b83",
+      "name": "Python A: The Analyst"
+    },
+    {
+      "parameters": {
+        "language": "pythonNative",
+        "pythonCode": "import pandas as pd\nimport matplotlib\nmatplotlib.use(\"Agg\")\nimport matplotlib.pyplot as plt\nfrom matplotlib import patheffects\nimport io\nimport base64\n\n# ============================================\n# SECTION 1: DATA RECONSTRUCTION\n# ============================================\n\nitem = _items[0]\npayload = item.get(\"json\", item) if isinstance(item, dict) else item\n\n# Get inputs passed from Node A\ncandle_data = payload.get(\"candle_data\", [])\nsymbol = payload.get(\"symbol\", \"UNKNOWN\")\nname = payload.get(\"name\", \"Unknown Stock\")\nindicators = payload.get(\"indicators\", {})\n\n# Re-create DataFrame\ndf = pd.DataFrame(candle_data, columns=[\"timestamp\", \"open\", \"high\", \"low\", \"close\", \"volume\"])\ndf[\"timestamp\"] = pd.to_datetime(df[\"timestamp\"])\nfor col in [\"open\", \"high\", \"low\", \"close\", \"volume\"]:\n    df[col] = pd.to_numeric(df[col], errors=\"coerce\")\ndf.set_index(\"timestamp\", inplace=True)\ndf.sort_index(inplace=True)\n\n# Re-calculate MA & Bands for CHARTS\ndf[\"ma50\"] = df[\"close\"].rolling(window=50).mean()\ndf[\"ma200\"] = df[\"close\"].rolling(window=200).mean()\n\ndf[\"bb_middle\"] = df[\"close\"].rolling(window=20).mean()\nbb_std = df[\"close\"].rolling(window=20).std()\ndf[\"bb_upper\"] = df[\"bb_middle\"] + (2 * bb_std)\ndf[\"bb_lower\"] = df[\"bb_middle\"] - (2 * bb_std)\n\ndf[\"ema12\"] = df[\"close\"].ewm(span=12, adjust=False).mean()\ndf[\"ema26\"] = df[\"close\"].ewm(span=26, adjust=False).mean()\ndf[\"macd\"] = df[\"ema12\"] - df[\"ema26\"]\ndf[\"macd_signal\"] = df[\"macd\"].ewm(span=9, adjust=False).mean()\ndf[\"macd_histogram\"] = df[\"macd\"] - df[\"macd_signal\"]\n\ndf[\"volume_ma\"] = df[\"volume\"].rolling(window=50).mean()\n\n# Extract scalar indicators\nresistance = indicators.get(\"resistance\", 0)\nsupport = indicators.get(\"support\", 0)\nma_signal = indicators.get(\"ma_signal\", \"\")\nbb_signal = indicators.get(\"bb_signal\", \"\")\nbb_width = indicators.get(\"bb_width\", 0)\nmacd_signal_text = indicators.get(\"macd_text\", \"\")\ncurrent_macd = indicators.get(\"macd\", 0)\ncurrent_macd_signal = indicators.get(\"macd_signal\", 0)\navg_volume = indicators.get(\"avg_volume\", 0)\n\n# ============================================\n# SECTION 2: DRAWING THE CHARTS\n# ============================================\n\nplt.style.use(\"dark_background\")\nbg_color, grid_color, text_color = \"#0a0e1a\", \"#1a1f2e\", \"#f0f0f0\"\ndf_chart = df.iloc[-60:].copy()\n\ndef add_subtle_glow(line, glow_color, glow_width=3, glow_alpha=0.4):\n    line.set_path_effects([\n        patheffects.SimpleLineShadow(offset=(0, 0), shadow_color=glow_color, alpha=glow_alpha, rho=glow_width),\n        patheffects.Normal()\n    ])\n\n# CHART 1: Price Action\nfig1, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8), gridspec_kw={\"height_ratios\": [3, 1]}, dpi=150)\nfig1.patch.set_facecolor(bg_color)\nax1.set_facecolor(bg_color)\nax2.set_facecolor(bg_color)\n\nprice_line = ax1.plot(df_chart.index, df_chart[\"close\"], color=\"#00d4ff\", linewidth=3, label=\"Price\", zorder=3)[0]\nma50_line = ax1.plot(df_chart.index, df_chart[\"ma50\"], color=\"#ffc107\", linewidth=2.2, label=\"MA50\", alpha=0.95)[0]\nma200_line = ax1.plot(df_chart.index, df_chart[\"ma200\"], color=\"#b388ff\", linewidth=2.2, label=\"MA200\", alpha=0.95)[0]\nadd_subtle_glow(price_line, \"#00d4ff\", 4, 0.5)\nadd_subtle_glow(ma50_line, \"#ffc107\", 3, 0.4)\nadd_subtle_glow(ma200_line, \"#b388ff\", 3, 0.4)\n\nax1.axhline(y=resistance, color=\"#ff4444\", linestyle=\"--\", linewidth=1.8, alpha=0.85, label=f\"Resistance: ₹{resistance:.1f}\", zorder=2)\nax1.axhline(y=support, color=\"#00ff77\", linestyle=\"--\", linewidth=1.8, alpha=0.85, label=f\"Support: ₹{support:.1f}\", zorder=2)\n\nax1.set_title(f\"{symbol} - Price Action & Trends\", fontsize=18, color=text_color, fontweight=\"bold\", pad=20)\nax1.set_ylabel(\"Price (₹)\", color=text_color, fontsize=13, fontweight=\"600\")\nax1.tick_params(colors=text_color, labelsize=11)\nax1.legend(loc=\"upper left\", fontsize=11, framealpha=0.95, facecolor=\"#1a1f2e\", edgecolor=\"#3a3f4e\")\nax1.grid(color=grid_color, linestyle=\"-\", linewidth=0.6, alpha=0.6)\n\ncolors = [\"#00cc66\" if df_chart[\"close\"].iloc[i] >= df_chart[\"open\"].iloc[i] else \"#ff3355\" for i in range(len(df_chart))]\nax2.bar(df_chart.index, df_chart[\"volume\"], color=colors, alpha=0.8, width=0.7)\nax2.axhline(y=avg_volume, color=\"#ffaa00\", linestyle=\"--\", linewidth=1.6, alpha=0.85, label=f\"Avg: {avg_volume/1e6:.2f}M\")\nax2.set_ylabel(\"Volume\", color=text_color, fontsize=12, fontweight=\"600\")\nax2.tick_params(colors=text_color, labelsize=10)\nax2.legend(loc=\"upper left\", fontsize=10, framealpha=0.95, facecolor=\"#1a1f2e\", edgecolor=\"#3a3f4e\")\nax2.grid(color=grid_color, linestyle=\"-\", linewidth=0.6, alpha=0.6)\n\nplt.tight_layout()\nbuffer1 = io.BytesIO()\nplt.savefig(buffer1, format=\"png\", bbox_inches=\"tight\", facecolor=bg_color, dpi=150)\nbuffer1.seek(0)\nchart1_base64 = base64.b64encode(buffer1.read()).decode(\"utf-8\")\nbuffer1.close()\nplt.close(fig1)\n\n# CHART 2: Bollinger Bands\nfig2, (ax3, ax4) = plt.subplots(2, 1, figsize=(14, 8), gridspec_kw={\"height_ratios\": [3, 1]}, dpi=150)\nfig2.patch.set_facecolor(bg_color)\nax3.set_facecolor(bg_color)\nax4.set_facecolor(bg_color)\n\nprice_line2 = ax3.plot(df_chart.index, df_chart[\"close\"], color=\"#00d4ff\", linewidth=3, label=\"Price\", zorder=3)[0]\nadd_subtle_glow(price_line2, \"#00d4ff\", 4, 0.5)\nax3.plot(df_chart.index, df_chart[\"bb_upper\"], color=\"#ff6090\", linewidth=2, linestyle=\"--\", label=\"Upper Band\", alpha=0.9)\nax3.plot(df_chart.index, df_chart[\"bb_middle\"], color=\"#e0e0e0\", linewidth=2, label=\"Middle (SMA20)\", alpha=0.9)\nax3.plot(df_chart.index, df_chart[\"bb_lower\"], color=\"#40ffaa\", linewidth=2, linestyle=\"--\", label=\"Lower Band\", alpha=0.9)\nax3.fill_between(df_chart.index, df_chart[\"bb_upper\"], df_chart[\"bb_lower\"], color=\"#00d4ff\", alpha=0.1)\n\nax3.set_title(f\"{symbol} - Bollinger Bands (Volatility)\", fontsize=18, color=text_color, fontweight=\"bold\", pad=20)\nax3.set_ylabel(\"Price (₹)\", color=text_color, fontsize=13, fontweight=\"600\")\nax3.tick_params(colors=text_color, labelsize=11)\nax3.legend(loc=\"upper left\", fontsize=11, framealpha=0.95, facecolor=\"#1a1f2e\", edgecolor=\"#3a3f4e\")\nax3.grid(color=grid_color, linestyle=\"-\", linewidth=0.6, alpha=0.6)\n\nax4.bar(df_chart.index, df_chart[\"volume\"], color=colors, alpha=0.8, width=0.7)\nax4.axhline(y=avg_volume, color=\"#ffaa00\", linestyle=\"--\", linewidth=1.6, alpha=0.85, label=f\"Avg: {avg_volume/1e6:.2f}M\")\nax4.set_ylabel(\"Volume\", color=text_color, fontsize=12, fontweight=\"600\")\nax4.tick_params(colors=text_color, labelsize=10)\nax4.legend(loc=\"upper left\", fontsize=10, framealpha=0.95, facecolor=\"#1a1f2e\", edgecolor=\"#3a3f4e\")\nax4.grid(color=grid_color, linestyle=\"-\", linewidth=0.6, alpha=0.6)\n\nplt.tight_layout()\nbuffer2 = io.BytesIO()\nplt.savefig(buffer2, format=\"png\", bbox_inches=\"tight\", facecolor=bg_color, dpi=150)\nbuffer2.seek(0)\nchart2_base64 = base64.b64encode(buffer2.read()).decode(\"utf-8\")\nbuffer2.close()\nplt.close(fig2)\n\n# CHART 3: MACD\nfig3, (ax5, ax6) = plt.subplots(2, 1, figsize=(14, 8), gridspec_kw={\"height_ratios\": [1, 1]}, dpi=150)\nfig3.patch.set_facecolor(bg_color)\nax5.set_facecolor(bg_color)\nax6.set_facecolor(bg_color)\n\nprice_line3 = ax5.plot(df_chart.index, df_chart[\"close\"], color=\"#00d4ff\", linewidth=3, label=\"Price\")[0]\nadd_subtle_glow(price_line3, \"#00d4ff\", 4, 0.5)\nax5.set_title(f\"{symbol} - MACD Momentum\", fontsize=18, color=text_color, fontweight=\"bold\", pad=20)\nax5.set_ylabel(\"Price (₹)\", color=text_color, fontsize=13, fontweight=\"600\")\nax5.tick_params(colors=text_color, labelsize=11)\nax5.legend(loc=\"upper left\", fontsize=11, framealpha=0.95, facecolor=\"#1a1f2e\", edgecolor=\"#3a3f4e\")\nax5.grid(color=grid_color, linestyle=\"-\", linewidth=0.6, alpha=0.6)\n\nmacd_line = ax6.plot(df_chart.index, df_chart[\"macd\"], color=\"#00ffbb\", linewidth=2.8, label=\"MACD\")[0]\nsignal_line = ax6.plot(df_chart.index, df_chart[\"macd_signal\"], color=\"#ff9933\", linewidth=2.3, label=\"Signal\")[0]\nadd_subtle_glow(macd_line, \"#00ffbb\", 3, 0.45)\nadd_subtle_glow(signal_line, \"#ff9933\", 3, 0.4)\nhist_colors = [\"#00cc66\" if h > 0 else \"#ff3355\" for h in df_chart[\"macd_histogram\"]]\nax6.bar(df_chart.index, df_chart[\"macd_histogram\"], color=hist_colors, alpha=0.7, width=0.7, label=\"Histogram\")\nax6.axhline(y=0, color=\"#888888\", linestyle=\"-\", linewidth=1.2, alpha=0.7)\nax6.set_ylabel(\"MACD\", color=text_color, fontsize=12, fontweight=\"600\")\nax6.tick_params(colors=text_color, labelsize=10)\nax6.legend(loc=\"upper left\", fontsize=10, framealpha=0.95, facecolor=\"#1a1f2e\", edgecolor=\"#3a3f4e\")\nax6.grid(color=grid_color, linestyle=\"-\", linewidth=0.6, alpha=0.6)\n\nplt.tight_layout()\nbuffer3 = io.BytesIO()\nplt.savefig(buffer3, format=\"png\", bbox_inches=\"tight\", facecolor=bg_color, dpi=150)\nbuffer3.seek(0)\nchart3_base64 = base64.b64encode(buffer3.read()).decode(\"utf-8\")\nbuffer3.close()\nplt.close(fig3)\n\n# ============================================\n# SECTION 3: RETURN IMAGES & CAPTIONS (MARKDOWN LEGACY)\n# ============================================\n\n# Helper for MACD direction symbol\nmacd_dir = \">\" if current_macd > current_macd_signal else \"<\"\n\nreturn [{\n    \"chart1_base64\": chart1_base64,\n    \"chart1_caption\": f\"*📈 {symbol} Price Action*\\n_{name}_\\n\\n*Signal:* {ma_signal}\\n*Key Levels:*\\n• Resistance: ₹{resistance:,.2f}\\n• Support: ₹{support:,.2f}\",\n    \n    \"chart2_base64\": chart2_base64,\n    \"chart2_caption\": f\"*📊 {symbol} Volatility Analysis*\\n\\n*Status:* {bb_signal}\\n*Band Width:* {bb_width:.2f}%\",\n    \n    \"chart3_base64\": chart3_base64,\n    \"chart3_caption\": f\"*💹 {symbol} Momentum (MACD)*\\n\\n*Signal:* {macd_signal_text}\\n*Readings:* MACD ({current_macd:.2f}) {macd_dir} Signal ({current_macd_signal:.2f})\"\n}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        1120
+      ],
+      "id": "572ef184-4b05-4d78-8080-e56b3c8d0989",
+      "name": "Python B: The Artist"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 🧠 UX ENGINE: UPSELL & AI GENERATOR\nconst triggerData = $('TA Engine Trigger').first().json;\n\n// 1. Get Current Selections\nlet requested = triggerData.request_types || [];\n\n// Safety: Handle string input\nif (typeof requested === 'string') {\n  requested = requested.replace(/[\\[\\]\"']/g, '').split(',').map(s => s.trim());\n}\n\n// Normalize to Uppercase\nconst selectedSet = new Set(requested.map(r => r.toUpperCase()));\n\n// 2. Define All Services\nconst allServices = [\n  { id: 'MOMENTUM', text: '🚀 Momentum' },\n  { id: 'TREND', text: '📈 Trend' },\n  { id: 'VOLATILITY', text: '⚡ Volatility' },\n  { id: 'CHARTS', text: '🖼️ Charts' }\n];\n\n// 3. Identify Missing Services\nconst missingOptions = allServices.filter(service => !selectedSet.has(service.id));\n\n// 4. Build Buttons\nconst buttons = [];\n\n// A. Add \"Missing Service\" Buttons\nif (missingOptions.length > 0) {\n  missingOptions.forEach(opt => {\n    buttons.push([ { text: `Add ${opt.text}`, callback_data: opt.id } ]);\n  });\n}\n\n// B. Add \"AI Summary\" Button (Conditional Logic)\n// Condition: Show ONLY if at least one text indicator is present\nconst hasIndicators = selectedSet.has('MOMENTUM') || selectedSet.has('TREND') || selectedSet.has('VOLATILITY');\n\nif (hasIndicators) {\n  // Note: We use a short ID because Telegram limits callback data to 64 bytes.\n  buttons.push([ { text: \"🤖 Generate AI Summary\", callback_data: \"AI_SUMMARY\" } ]);\n}\n\n// C. Always Add Main Menu\nbuttons.push([ { text: \"🏠 Return to Dashboard\", callback_data: \"menu2\" } ]);\n\n// 5. Output structure\nreturn {\n  json: {\n    ...$input.item.json,\n    upsell_markup: { inline_keyboard: buttons },\n    missing_count: missingOptions.length\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        96,
+        944
+      ],
+      "id": "a1746550-94a8-40cb-acbc-07f80e296ebd",
+      "name": "UX Engine"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => {\n  // 1. Create the base message object\n  const body = {\n    chat_id: $('TA Engine Trigger').item.json['telegram id'],\n    text: $json.text_html,\n    parse_mode: \"HTML\"\n  };\n\n  // 2. Only add buttons if there are NO charts\n  if (!$json.has_charts) {\n    body.reply_markup = $json.upsell_markup;\n  }\n\n  // 3. Return as String\n  return JSON.stringify(body);\n})() }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        352,
+        944
+      ],
+      "id": "7d59eed9-5f76-4532-8314-2e1f209bf16b",
+      "name": "HTTP: Smart Text Report"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  chat_id: $('TA Engine Trigger').first().json['telegram id'],\n  text: \"<b>Choose an option to add:</b>\",\n  parse_mode: \"HTML\",\n  reply_markup: $('UX Engine').first().json.upsell_markup\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1488,
+        1536
+      ],
+      "id": "d0f33ec8-6128-4fb0-a16d-7a498a88f97f",
+      "name": "HTTP: Send Menu"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "html_safe",
+              "name": "sanitized_html",
+              "value": "={{ $json.text_html.replace(/'/g, \"''\") }}",
+              "type": "string"
+            },
+            {
+              "id": "tid",
+              "name": "telegram_id",
+              "value": "={{ $json.telegram_id }}",
+              "type": "number"
+            },
+            {
+              "id": "pass_through",
+              "name": "original_json",
+              "value": "={{ $json }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        96,
+        752
+      ],
+      "id": "27d559a3-04bc-4cda-9b1a-01ac5f458604",
+      "name": "Prepare SQL Data"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE user_sessions \nSET collected_data = jsonb_set(\n  collected_data, \n  '{last_report_html}', \n  to_jsonb('{{ $json.sanitized_html }}'::text)\n)\nWHERE chat_id = {{ $('TA Engine Trigger').item.json['telegram id'] }};",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        352,
+        752
+      ],
+      "id": "c28a3ed2-49b7-40a2-b532-db97089cca71",
+      "name": "DB: Save Last Report1",
+      "credentials": {
+        "postgres": {
+          "id": "QDssr4BqAkPgUdJl",
+          "name": "stock_trading_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 🔐 1. AUTH & DATA INGESTION\n\n**What Happens:**\n1. **Trigger:** Receives stock token & user request.\n2. **Auth:** Generates TOTP & Logins to AngelOne API.\n3. **Fetch:** Gets Stock Metadata (Name/Symbol).\n4. **History:** Pulls 400 days of OHLCV candle data.\n5. **Merge:** Combines all data into a single payload for the Analyst.",
+        "height": 832,
+        "width": 1748,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2176,
+        512
+      ],
+      "id": "1fe2a426-1bb1-445b-a3f8-f18f44e706b5",
+      "name": "Ingestion Note"
+    },
+    {
+      "parameters": {
+        "content": "## 🧠 2. ANALYTICAL ENGINE\n\n**Python Node A:**\n• Calculates RSI, MACD, Bollinger Bands.\n• Determines Buy/Sell signals.\n• Generates the **Text Report** HTML.\n• Decides if Charts are needed based on user selection.",
+        "height": 840,
+        "width": 400,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -384,
+        512
+      ],
+      "id": "3a5d1ec9-51a3-4abb-9511-832451e96680",
+      "name": "Analysis Note"
+    },
+    {
+      "parameters": {
+        "content": "## 💾 3. UX & DB LOGIC\n\n**What Happens:**\n1. **Database:** Saves the generated HTML report to Postgres (used for context in AI summaries).\n2. **UX Engine:** dynamically builds the \"Upsell\" buttons (e.g., \"Add Charts\").\n3. **First Reply:** Sends the Text Report immediately.",
+        "height": 832,
+        "width": 496,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        48,
+        512
+      ],
+      "id": "1a04a242-a145-4c26-8094-ff7820d66460",
+      "name": "UX Note"
+    },
+    {
+      "parameters": {
+        "content": "## 📤 5. DELIVERY LAYER\n\n**What Happens:**\n1. **Convert:** Base64 Strings → Binary Files.\n2. **Send:** Uploads 3 photos to Telegram with specific captions.\n3. **Menu:** Appends the Main Menu button at the very end.\n\n**Result:** The user receives a stream of analysis in < 2 seconds.",
+        "height": 1048,
+        "width": 528,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        672
+      ],
+      "id": "a2061d7a-6248-4068-be36-27a4e89519ff",
+      "name": "Delivery Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "TA Engine Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate AngelOne TOTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AngelOne TOTP": {
+      "main": [
+        [
+          {
+            "node": "AngelOne_Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Token & JWT": {
+      "main": [
+        [
+          {
+            "node": "Get Stock Metadata",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch 400D OHLCV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Stock Metadata": {
+      "main": [
+        [
+          {
+            "node": "Combine Meta + OHLCV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch 400D OHLCV": {
+      "main": [
+        [
+          {
+            "node": "Combine Meta + OHLCV",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Combine Meta + OHLCV": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Restore Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "“Chart 1: Price Action to File": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Chart 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chart 3: MACD to File": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Chart 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram: Chart 3": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Send Menu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chart 2: Bollinger to File": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Chart 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AngelOne_Login": {
+      "main": [
+        [
+          {
+            "node": "Prepare Token & JWT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check: Need Charts?": {
+      "main": [
+        [
+          {
+            "node": "Python B: The Artist",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Context": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Python A: The Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Python A: The Analyst": {
+      "main": [
+        [
+          {
+            "node": "Check: Need Charts?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "UX Engine",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare SQL Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Python B: The Artist": {
+      "main": [
+        [
+          {
+            "node": "“Chart 1: Price Action to File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Chart 2: Bollinger to File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Chart 3: MACD to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UX Engine": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Smart Text Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare SQL Data": {
+      "main": [
+        [
+          {
+            "node": "DB: Save Last Report1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "27dd5a14-485b-46c2-8e24-7b77effce6a4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9f5282353603576946fbff36b567871e629011b1abbfe72d7843b725a09ec2ca"
+  },
+  "id": "pif1Pv6gyQbKFkZJ",
+  "tags": [
+    {
+      "updatedAt": "2025-12-06T00:08:27.901Z",
+      "createdAt": "2025-12-06T00:08:27.901Z",
+      "id": "9tiMmM9hVtXyWRq8",
+      "name": "sub-workflow"
+    },
+    {
+      "updatedAt": "2025-12-06T01:53:21.480Z",
+      "createdAt": "2025-12-06T01:53:21.480Z",
+      "id": "LGFPG8xtzCFb3FXK",
+      "name": "RA"
+    }
+  ]
+}

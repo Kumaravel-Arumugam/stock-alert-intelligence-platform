@@ -1,0 +1,1062 @@
+{
+  "name": "Alert Watcher",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://apiconnect.angelbroking.com/rest/auth/angelbroking/user/v1/loginByPassword",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "X-UserType",
+              "value": "USER"
+            },
+            {
+              "name": "X-SourceID",
+              "value": "WEB"
+            },
+            {
+              "name": "X-ClientLocalIP",
+              "value": "157.51.46.214"
+            },
+            {
+              "name": "X-ClientPublicIP",
+              "value": "157.51.46.214"
+            },
+            {
+              "name": "X-MACAddress",
+              "value": "48:45:E6:80:43:73"
+            },
+            {
+              "name": "X-PrivateKey",
+              "value": "={{$env.ANGELONE_PRIVATE_KEY}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "clientcode",
+              "value": "={{$env.ANGELONE_CLIENT_CODE}}"
+            },
+            {
+              "name": "password",
+              "value": "={{$env.ANGELONE_PASSWORD}}"
+            },
+            {
+              "name": "totp",
+              "value": "={{ $json.token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1760,
+        -432
+      ],
+      "id": "4520cb8e-a534-4be7-a209-50b486719834",
+      "name": "AngelOne Login"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "condition-above",
+                    "leftValue": "={{ $json.condition.toUpperCase() }}",
+                    "rightValue": "ABOVE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ABOVE"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "condition-below",
+                    "leftValue": "={{ $json.condition.toUpperCase() }}",
+                    "rightValue": "BELOW",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "BELOW"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        800,
+        -336
+      ],
+      "id": "8122794d-971e-4bb0-b45d-77678a3172ab",
+      "name": "Check Condition Type"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        -496
+      ],
+      "id": "18ad2573-09c8-42e3-98f1-95cfe84768cb",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8c981feb-5ed6-4139-b42f-cba17a297ef5",
+              "name": "jwtToken",
+              "value": "={{ $json.data.jwtToken }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1984,
+        -352
+      ],
+      "id": "69273a92-8c75-4872-8038-ac9862f0b78c",
+      "name": "Prepare  JWT"
+    },
+    {
+      "parameters": {
+        "amount": 0.5
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1312,
+        -432
+      ],
+      "id": "5d442adf-4caf-40ed-9456-d4b8a0c0c0b2",
+      "name": "Wait",
+      "webhookId": "b4605723-9942-45c8-9a99-93e695890342"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://apiconnect.angelbroking.com/rest/secure/angelbroking/market/v1/quote/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.jwtToken }}"
+            },
+            {
+              "name": "X-PrivateKey",
+              "value": "={{$env.ANGELONE_PRIVATE_KEY}}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "X-SourceID",
+              "value": "WEB"
+            },
+            {
+              "name": "X-ClientLocalIP",
+              "value": "127.0.0.1"
+            },
+            {
+              "name": "X-ClientPublicIP",
+              "value": "127.0.0.1"
+            },
+            {
+              "name": "X-MACAddress",
+              "value": "MAC_ADDRESS"
+            },
+            {
+              "name": "X-UserType",
+              "value": "USER"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"mode\": \"LTP\",\n  \"exchangeTokens\": {\n    \"NSE\": [\"{{ $('Loop Over Items').item.json.stock_token }}\"]\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2176,
+        -352
+      ],
+      "id": "d44401f7-3f92-45be-ba59-0e31fb4f78f2",
+      "name": "Fetch LTP"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "check-threshold",
+              "leftValue": "={{ $json.data.fetched[0].ltp }}",
+              "rightValue": "={{ $('Loop Over Items').item.json.target_price }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2384,
+        -352
+      ],
+      "id": "73217456-dd5f-4fd0-b378-f5e19b0b6810",
+      "name": "Is Price >= Target?"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Check Condition Type').item.json.chat_id }}",
+        "text": "=🚨 *Alert Triggered!* 🚨\n\n📈 *{{ $('Loop Over Items').item.json.symbol }}* has crossed *{{ $('Loop Over Items').item.json.target_price }}*\n\n💰 Current Price: *{{ $json.data.fetched[0].ltp }}*\n📊 Condition: ABOVE",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2720,
+        -368
+      ],
+      "id": "86abca13-02d8-4207-b192-063b9209fcfd",
+      "name": "Notify User",
+      "webhookId": "5e327f65-3aa3-492d-8b27-5c0af2de2d46",
+      "credentials": {
+        "telegramApi": {
+          "id": "gk6r3Lzq8qYvCbWR",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM user_alerts WHERE id = {{ $('Loop Over Items').item.json.id }};",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2928,
+        -272
+      ],
+      "id": "afd8ded8-a1ce-4fa5-bc57-9a19e9cb412c",
+      "name": "Delete Alert",
+      "credentials": {
+        "postgres": {
+          "id": "QDssr4BqAkPgUdJl",
+          "name": "stock_trading_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        -32
+      ],
+      "id": "42fba378-9fed-44e1-b73f-fec0013f7870",
+      "name": "Loop Over Items (Below)"
+    },
+    {
+      "parameters": {
+        "amount": 0.5
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1312,
+        80
+      ],
+      "id": "db32e127-be82-451c-a206-c8ea68b0d50a",
+      "name": "Wait (Below)",
+      "webhookId": "cf737939-4628-4aaa-a735-6c535933dcfd"
+    },
+    {
+      "parameters": {
+        "options": {
+          "algorithm": "SHA1",
+          "digits": 6,
+          "period": 30
+        }
+      },
+      "type": "n8n-nodes-base.totp",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        80
+      ],
+      "id": "983a1134-acbe-46e7-b69a-0be819148b98",
+      "name": "Generate TOTP (Below)",
+      "credentials": {
+        "totpApi": {
+          "id": "ady2aWigEqKMurX0",
+          "name": "TOTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://apiconnect.angelbroking.com/rest/auth/angelbroking/user/v1/loginByPassword",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "X-UserType",
+              "value": "USER"
+            },
+            {
+              "name": "X-SourceID",
+              "value": "WEB"
+            },
+            {
+              "name": "X-ClientLocalIP",
+              "value": "157.51.46.214"
+            },
+            {
+              "name": "X-ClientPublicIP",
+              "value": "157.51.46.214"
+            },
+            {
+              "name": "X-MACAddress",
+              "value": "48:45:E6:80:43:73"
+            },
+            {
+              "name": "X-PrivateKey",
+              "value": "={{$env.ANGELONE_PRIVATE_KEY}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "clientcode",
+              "value": "={{$env.ANGELONE_CLIENT_CODE}}"
+            },
+            {
+              "name": "password",
+              "value": "={{$env.ANGELONE_PASSWORD}}"
+            },
+            {
+              "name": "totp",
+              "value": "={{ $json.token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1760,
+        80
+      ],
+      "id": "8af2f29a-777f-47a7-a31c-8769177279fe",
+      "name": "AngelOne Login (Below)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8c981feb-5ed6-4139-b42f-cba17a297ef5",
+              "name": "jwtToken",
+              "value": "={{ $json.data.jwtToken }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1968,
+        144
+      ],
+      "id": "cc373a14-ed55-4d5d-9224-e08e199eacb5",
+      "name": "Prepare JWT (Below)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://apiconnect.angelbroking.com/rest/secure/angelbroking/market/v1/quote/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.jwtToken }}"
+            },
+            {
+              "name": "X-PrivateKey",
+              "value": "={{$env.ANGELONE_PRIVATE_KEY}}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "X-SourceID",
+              "value": "WEB"
+            },
+            {
+              "name": "X-ClientLocalIP",
+              "value": "127.0.0.1"
+            },
+            {
+              "name": "X-ClientPublicIP",
+              "value": "127.0.0.1"
+            },
+            {
+              "name": "X-MACAddress",
+              "value": "MAC_ADDRESS"
+            },
+            {
+              "name": "X-UserType",
+              "value": "USER"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"mode\": \"LTP\",\n  \"exchangeTokens\": {\n    \"NSE\": [\"{{ $('Loop Over Items (Below)').item.json.stock_token }}\"]\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2192,
+        144
+      ],
+      "id": "d24718fc-3871-4de1-be72-028691329df6",
+      "name": "Fetch LTP (Below)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "check-threshold-below",
+              "leftValue": "={{ $json.data.fetched[0].ltp }}",
+              "rightValue": "={{ $('Loop Over Items (Below)').item.json.target_price }}",
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2384,
+        144
+      ],
+      "id": "89df041b-7cdf-487f-87be-b25679de7a83",
+      "name": "Is Price <= Target?"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Check Condition Type').item.json.chat_id }}",
+        "text": "=🚨 *Alert Triggered!* 🚨\n\n📉 *{{ $('Loop Over Items (Below)').item.json.symbol }}* has dropped below *{{ $('Loop Over Items (Below)').item.json.target_price }}*\n\n💰 Current Price: *{{ $json.data.fetched[0].ltp }}*\n📊 Condition: BELOW",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2720,
+        128
+      ],
+      "id": "2cd1b0da-a623-45d1-81eb-eb630dcc7ab0",
+      "name": "Notify User (Below)",
+      "webhookId": "48bcc5ef-6d57-4b3b-90bc-356ecff6988c",
+      "credentials": {
+        "telegramApi": {
+          "id": "gk6r3Lzq8qYvCbWR",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM user_alerts WHERE id = {{ $('Loop Over Items (Below)').item.json.id }};",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2960,
+        224
+      ],
+      "id": "6254624f-f9a5-4c49-8be6-e35207c9be95",
+      "name": "Delete Alert (Below)",
+      "credentials": {
+        "postgres": {
+          "id": "QDssr4BqAkPgUdJl",
+          "name": "stock_trading_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "algorithm": "SHA1",
+          "digits": 6,
+          "period": 30
+        }
+      },
+      "type": "n8n-nodes-base.totp",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        -432
+      ],
+      "id": "a826e75e-ea96-43e1-b4ee-8c4cec92ace5",
+      "name": "Generate TOTP",
+      "credentials": {
+        "totpApi": {
+          "id": "ady2aWigEqKMurX0",
+          "name": "TOTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as alert_count FROM user_alerts;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        128,
+        -112
+      ],
+      "id": "e65ac12f-7b1b-47e0-8b73-f204b85bbd74",
+      "name": "Count Active Alerts",
+      "credentials": {
+        "postgres": {
+          "id": "QDssr4BqAkPgUdJl",
+          "name": "stock_trading_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "check-count",
+              "leftValue": "={{ $json.alert_count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        352,
+        -112
+      ],
+      "id": "1113f05c-01a8-4b0d-973c-113dc928e946",
+      "name": "Has Any Alerts?"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM user_alerts;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        576,
+        -336
+      ],
+      "id": "e3bfa70b-2192-4131-99ba-e03cb12f63c2",
+      "name": "Fetch Active Alerts",
+      "credentials": {
+        "postgres": {
+          "id": "QDssr4BqAkPgUdJl",
+          "name": "stock_trading_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## ⚡ SMART TRIGGER & OPTIMIZATION\n\n**What Happens:**\nThis section acts as the \"Wake Up & Check\" system, optimized to save resources.\n\n1. **Schedule:** Runs automatically every 10 minutes.\n2. **Resource Check:** Runs a lightweight SQL `COUNT(*)` query first.\n3. **Gatekeeper:** \n   - If Count = 0: The workflow **stops immediately**. No API calls are wasted.\n   - If Count > 0: It triggers the heavy `Fetch Active Alerts` query.\n4. **Routing:** The **Switch Node** separates alerts into two logical streams:\n   - **ABOVE:** For Breakout alerts (Price ≥ Target)\n   - **BELOW:** For Breakdown alerts (Price ≤ Target)\n\n**Output:** A clean list of active alerts, sorted by condition type.",
+        "height": 590,
+        "width": 1172,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        -496
+      ],
+      "id": "816c2856-9129-4c2e-b495-0c9e6dfa9bb3",
+      "name": "Trigger Note"
+    },
+    {
+      "parameters": {
+        "content": "## 🔄 EXECUTION CORE (DUAL BRANCHES)\n\n**What Happens:**\nBoth branches (ABOVE & BELOW) function as independent processing engines.\n\n**The Execution Loop:**\n1. **Batching:** Processes alerts one-by-one (or in small batches) to ensure stability.\n2. **Authentication:** Generates a fresh TOTP and logs into AngelOne to get a session JWT.\n3. **Data Fusion:** The `Prepare JWT` node merges the Authentication Token with the Stock Token.\n4. **Live Data:** Fetches the **LTP (Last Traded Price)** directly from AngelOne API.\n\n**The Logic Check:**\n- **Upper Branch:** Checks if `LTP >= Target` (Crossed Up)\n- **Lower Branch:** Checks if `LTP <= Target` (Dropped Down)\n\n**Output:** Verified trigger events ready for notification.",
+        "height": 1339,
+        "width": 1497,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        -896
+      ],
+      "id": "38cebc17-b5b5-4f00-b065-714d63fac814",
+      "name": "Core Logic Note"
+    },
+    {
+      "parameters": {
+        "content": "## 📱 NOTIFICATION & CLEANUP\n\n**What Happens:**\nOnce an alert condition is met (True), this final stage executes the user interaction.\n\n1. **Telegram Notification:** \n   - Sends a rich-text message.\n   - Includes: Stock Name, Trigger Price, Current Price, and Direction (📈/📉).\n2. **Database Cleanup:** \n   - Immediately **DELETES** the alert from the `user_alerts` table.\n   - This prevents the user from being spammed every 10 minutes for the same event.\n\n**Result:** The user is notified instantly, and the system resets for the next cycle.",
+        "height": 1344,
+        "width": 596,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2576,
+        -896
+      ],
+      "id": "f166e9af-ba05-48f5-b6df-445c162e624a",
+      "name": "Delivery Note"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        -112
+      ],
+      "id": "2aafaaeb-7a4f-436e-8036-f1f20228d830",
+      "name": "Every 10 Minutes"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AngelOne Login": {
+      "main": [
+        [
+          {
+            "node": "Prepare  JWT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Condition Type": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items (Below)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare  JWT": {
+      "main": [
+        [
+          {
+            "node": "Fetch LTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Generate TOTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch LTP": {
+      "main": [
+        [
+          {
+            "node": "Is Price >= Target?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Price >= Target?": {
+      "main": [
+        [
+          {
+            "node": "Notify User",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify User": {
+      "main": [
+        [
+          {
+            "node": "Delete Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Alert": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items (Below)": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Wait (Below)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait (Below)": {
+      "main": [
+        [
+          {
+            "node": "Generate TOTP (Below)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate TOTP (Below)": {
+      "main": [
+        [
+          {
+            "node": "AngelOne Login (Below)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AngelOne Login (Below)": {
+      "main": [
+        [
+          {
+            "node": "Prepare JWT (Below)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare JWT (Below)": {
+      "main": [
+        [
+          {
+            "node": "Fetch LTP (Below)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch LTP (Below)": {
+      "main": [
+        [
+          {
+            "node": "Is Price <= Target?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Price <= Target?": {
+      "main": [
+        [
+          {
+            "node": "Notify User (Below)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items (Below)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify User (Below)": {
+      "main": [
+        [
+          {
+            "node": "Delete Alert (Below)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Alert (Below)": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items (Below)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate TOTP": {
+      "main": [
+        [
+          {
+            "node": "AngelOne Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Count Active Alerts": {
+      "main": [
+        [
+          {
+            "node": "Has Any Alerts?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Any Alerts?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Active Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Active Alerts": {
+      "main": [
+        [
+          {
+            "node": "Check Condition Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 10 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Count Active Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "27efb163-2680-4840-b9c4-354c2e2faa2f",
+  "meta": {
+    "instanceId": "9f5282353603576946fbff36b567871e629011b1abbfe72d7843b725a09ec2ca"
+  },
+  "id": "ihsGy5rID9Z9uFfj",
+  "tags": [
+    {
+      "updatedAt": "2025-12-06T00:08:27.901Z",
+      "createdAt": "2025-12-06T00:08:27.901Z",
+      "id": "9tiMmM9hVtXyWRq8",
+      "name": "sub-workflow"
+    },
+    {
+      "updatedAt": "2025-12-06T01:53:21.480Z",
+      "createdAt": "2025-12-06T01:53:21.480Z",
+      "id": "LGFPG8xtzCFb3FXK",
+      "name": "RA"
+    }
+  ]
+}
