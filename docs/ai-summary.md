@@ -5,6 +5,7 @@
 The AI Summary layer is responsible for converting structured analytical outputs into concise, human-readable summaries. It operates strictly as a post-analysis augmentation layer and does not influence system decisions, alert thresholds, or execution logic.
 
 This layer exists to improve interpretability and reduce cognitive load, not to introduce new signals or recommendations.
+<img width="1920" height="1080" alt="Screenshot (417)" src="https://github.com/user-attachments/assets/5d5bb759-6343-4eb0-b764-95e1478953cb" />
 
 ---
 
