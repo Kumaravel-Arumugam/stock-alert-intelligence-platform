@@ -6,6 +6,8 @@ The Technical Analysis Engine is responsible for generating structured, determin
 
 This workflow is invoked only when analysis is explicitly required and does not perform any state management or execution decisions on its own.
 
+<img width="1920" height="1080" alt="Screenshot (426)" src="https://github.com/user-attachments/assets/12a10676-5852-4bc2-b8a9-ae0326deca89" />
+
 ---
 
 ## Data Acquisition Strategy
