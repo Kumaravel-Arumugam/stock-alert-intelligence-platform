@@ -6,6 +6,8 @@ The Trade Command Router is responsible for interpreting user-provided commands 
 
 This separation ensures that free-form user input does not bypass system safeguards or introduce unintended behavior.
 
+<img width="1920" height="1080" alt="Screenshot (427)" src="https://github.com/user-attachments/assets/b676c695-e72b-4bf0-ab73-f426f915a0b4" />
+
 ---
 
 ## Command Interpretation Strategy
