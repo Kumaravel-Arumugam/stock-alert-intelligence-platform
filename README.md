@@ -2,6 +2,7 @@
 
 Logic-driven stock alert and technical analysis automation platform designed with modular workflows, state management, and AI-assisted summarization.
 
+[![n8n](https://img.shields.io/badge/n8n-workflow%20automation-orange)](https://n8n.io/)
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/7edec043-1e3b-462e-bf22-c0e3b14858a8" />
 
 ---
